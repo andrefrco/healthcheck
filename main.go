@@ -5,12 +5,33 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+func recordMetrics() {
+	go func() {
+		for {
+			opsProcessed.Inc()
+			time.Sleep(2 * time.Second)
+		}
+	}()
+}
+
+var (
+	opsProcessed = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "healthcheck_processed_ops_total",
+		Help: "The total number of processed events",
+	})
+)
+
 func main() {
+	recordMetrics()
+
 	var listen_port string = ":" + getEnv("LISTEN_PORT", "8000")
 	router := mux.NewRouter()
 	router.HandleFunc("/healthcheck", HealthCheck).Methods("GET")
